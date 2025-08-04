@@ -1,0 +1,42 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum SessionStatus {
+  waiting
+  running
+  completed
+}
+
+enum SenderType {
+  user
+  goose
+}
+
+model Session {
+  id        String        @id
+  name      String
+  status    SessionStatus @default(waiting)
+  startedAt DateTime      @default(now())
+  messages  Message[]
+
+  @@index([status])
+  @@map("sessions")
+}
+
+model Message {
+  id        String     @id @default(cuid())
+  sessionId String
+  session   Session    @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  sender    SenderType
+  text      String
+  timestamp DateTime   @default(now())
+
+  @@index([sessionId, timestamp])
+  @@map("messages")
+}
