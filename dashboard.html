@@ -1,4 +1,42 @@
 <!DOCTYPE html>
+<!-- Added Sessions panel for local registry discovery and attach -->
+<div style="padding:10px;font-family:system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial">
+  <h2>Wingman Local Sessions</h2>
+  <div>
+    <label>API Token: <input id="apitoken" value="default-token" /></label>
+    <button onclick="loadSessions()">Refresh</button>
+  </div>
+  <table border="1" cellpadding="6" cellspacing="0" style="margin-top:10px; width:100%">
+    <thead>
+      <tr><th>Name</th><th>Origin</th><th>PID</th><th>Healthy</th><th>Age (ms)</th><th>Actions</th></tr>
+    </thead>
+    <tbody id="rows"></tbody>
+  </table>
+  <pre id="log" style="margin-top:10px; background:#111; color:#0f0; padding:8px; height:200px; overflow:auto"></pre>
+</div>
+<script>
+async function loadSessions(){
+  const token = document.getElementById('apitoken').value;
+  const res = await fetch('/local-sessions', { headers: { Authorization: 'Bearer '+token }});
+  const data = await res.json();
+  const rows = document.getElementById('rows');
+  rows.innerHTML='';
+  (data||[]).forEach(s=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML = `<td>${s.display_name||s.session_id}</td><td>${s.origin}</td><td>${s.pid}</td><td>${s.healthy}</td><td>${s.age_ms}</td><td><button data-id="${s.session_id}">Attach</button></td>`;
+    tr.querySelector('button').onclick = ()=> attach(s.session_id);
+    rows.appendChild(tr);
+  })
+}
+async function attach(id){
+  const token = document.getElementById('apitoken').value;
+  const res = await fetch('/local-sessions/'+id+'/attach', { method:'POST', headers: { Authorization: 'Bearer '+token }});
+  const data = await res.json();
+  document.getElementById('log').textContent = JSON.stringify(data,null,2);
+}
+loadSessions();
+</script>
+
 <html lang="en">
   <head>
     <meta charset="UTF-8" />

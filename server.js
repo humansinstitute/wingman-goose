@@ -368,6 +368,30 @@ app.get("/health", async (req, res) => {
   }
 });
 
+// Local Sessions (registry) endpoints
+const { discoverLocalSessions, attach: attachClient } = require('./libs/wingman-sdk');
+
+app.get('/local-sessions', authenticateToken, (req, res) => {
+  try {
+    const sessions = discoverLocalSessions();
+    res.json(sessions);
+  } catch (e) {
+    res.status(500).json({ error: 'failed_to_discover', message: e.message });
+  }
+});
+
+app.post('/local-sessions/:id/attach', authenticateToken, async (req, res) => {
+  try {
+    const sessions = discoverLocalSessions();
+    const s = sessions.find(x => x.session_id === req.params.id);
+    if (!s) return res.status(404).json({ error: 'not_found' });
+    const result = await attachClient(s, { timeoutMs: 2000 });
+    res.json(result);
+  } catch (e) {
+    res.status(500).json({ error: 'attach_failed', message: e.message });
+  }
+});
+
 // API Endpoints
 
 // POST /sessions - Create new Goose session
